@@ -1,0 +1,572 @@
+---
+title: "DATS6101 Group Project: Airbnb in New York City 2019"
+author: "CrystalMath: Gregg Berne Legarda, Moncrief Russell, Nguyen Curtis, Satetasakdasiri Sanhanat, Bin Xing"
+date: "October 15, 2019"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=F}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r basicfcn, include=F}
+# Knit does not work with install.packages functions. Any install.packages statements in the RMD file needs to be commented out before knitting. 
+# And if the RMD is sent to another person/computer that requires installing the package, the user can remove the commenting and install the package.
+# Here, we use another option by introducting this convenient function, we named it loadPkg(), which uses install.packages() and require(). 
+# The function require() is similar to library(), except it returns a TRUE/FALSE value.
+# You can add quietly=T option to the require() function
+loadPkg = function(x) { if (!require(x,character.only=T, quietly =T)) { install.packages(x,dep=T,repos="http://cran.us.r-project.org"); if(!require(x,character.only=T)) stop("Package not found") } }
+```
+
+## Chapter 1: Introduction
+
+New York city Is one of the most famous cities in the United States as it is financial, cultural and entertainment centers of the world. Of course, all of these factors are an attraction for tourists around the world to travel to New York. According to Mastercard Global Destination Index report, New York City is one of the 10 Most Visited Cities in 2019. There were 13.6 million foreign tourists that traveled to New York last year. In addition, they visited New York on an average of approximately 8 nights and spent an average of 152 dollars per day.  
+
+Airbnb is a way of international visitors to find accommodations for traveling abroad. In 2018, Airbnb has approximately 150 million guest users and 2.9 million hosts around the world, covering in over 191 countries. According to Wachsmuth et al. (2018), New York is the third-largest Airbnb market in the world, with more than 40,000 housing and apartment rental listings, covering in Manhattan, Bronx, Queens, Brooklyn, and Staten Island. Furthermore, they found that New York’s Airbnb revenue increased by 14 percent or jumped to $657 million between 2016 and 2017, in line with an increase of the number of Airbnb guests and New York’s visitors. Taking into an account of all factors, it is undeniable that Airbnb has become a way to find the accommodations in New York City for many tourists around the world. Thus, Airbnb hosts data becomes a hot topic to do the research.
+
+This report, focuses on Airbnb hosts in New York City 2019, contains 6 chapters: chapter 2 includes source data and basic data visualization; …………………
+
+
+## Chapter 2: Description of Data
+
+### 2.1 Source Data
+
+In this study, the CSV data file comes from Inside Airbnb (http://insideairbnb.com/get-the-data.html). This dataset contains 48,865 Airbnb rental providers information in New York City 2019 with 16 variables,including housing ID,  accommodation name, host names, host ID, neighborhood group, sub-neighborhoods, latitude, longitude, room type, price, minimum night for rent, the number of reviews, the date of last review, the frequency of reviews, calculated host listing counts, and the number of availabilities in one year. To review the data, str() function in R is used to view a quick snapshot of the data as follows: 
+
+```{r source data, echo=F}
+library(readr)
+AB_NYC <- read.csv("AB_NYC_2019.csv")
+str(AB_NYC)
+
+```
+
+### 2.2 Geographic Coverage of Data
+
+To do a basic data visualization, latitude and longitude in the dataset are used to draw the map, which is plotted by leaflet library in R. 
+
+```{r in, include=F}
+library(leaflet)
+
+AB1 <- subset(AB_NYC, price %in% 0:150)
+AB2 <- subset(AB_NYC, price %in% 151:500)
+AB3 <- subset(AB_NYC, price %in% 501:1000)
+AB4 <- subset(AB_NYC, price >= 1001)
+
+AB5 <- subset(AB_NYC, room_type == "Private room")
+AB6 <- subset(AB_NYC, room_type == "Entire home/apt")
+AB7 <- subset(AB_NYC, room_type == "Shared room")
+
+```
+
+##### (1) New York's Airbnb with four different price groups.
+
+To begin with first data visualization reviews, Airbnb hosts are divided by four different price groups to plot the map. Focusing on the below map, the number of Airbnb hosts that are lower than $150 per night (yellow points) are 33,957, accounting for 69.4% of all Airbnb hosts in New York City. In addition, there are 13.894 hosts or 28.4% that are in $151-$500 per night groups (blue points). Furthermore, 805 and 239 hosts are in $501-$1,000 (green points) and higher $1,000 (red points) groups, respectively.          
+
+```{r map1, echo=F}
+m <- leaflet(AB_NYC) %>%
+    addProviderTiles(providers$CartoDB.DarkMatter) %>% 
+  setView(-73.930000, 40.73500, zoom = 10) %>% 
+  addCircleMarkers(lng=AB1$longitude, lat=AB1$latitude, popup=AB1$name, weight = 3,radius=2, color= "#ffa500", stroke = F, fillOpacity = 0.5) %>%
+  addCircleMarkers(lng=AB2$longitude, lat=AB2$latitude, popup=AB2$name, weight = 3,radius=2, color= "#1337ed", stroke = F, fillOpacity = 0.5) %>%
+  addCircleMarkers(lng=AB3$longitude, lat=AB3$latitude, popup=AB3$name, weight = 3,radius=2, color= "#79de76", stroke = F, fillOpacity = 0.5) %>%
+  addCircleMarkers(lng=AB4$longitude, lat=AB4$latitude, popup=AB4$name, weight = 3,radius=2, color= "#cf2323", stroke = F, fillOpacity = 0.5) %>%
+  addLegend("bottomright", colors= c("#ffa500", "#1337ed","#79de76","#cf2323"), labels=c(" < $150", "$151-$500", "$501-$1,000","> $1,000"), title="Price (US dollar)") 
+
+m
+
+
+```
+
+##### (2) New York's Airbnb with three different room types.
+
+Airbnb hosts can list entire homes/apartments, private or shared rooms. According to the below map, there are 25,409 hosts for entire homes/apartments (blue points), accounting for approximately 51.9% of all Airbnb hosts in New York City. While, there are 22,326 private rooms (yellow points) and only 1,160 shared rooms (red points).  
+
+```{r map2, echo=F}
+m <- leaflet(AB_NYC) %>%
+    addProviderTiles(providers$CartoDB.DarkMatter) %>% 
+  setView(-73.930000, 40.73500, zoom = 10) %>% 
+  addCircleMarkers(lng=AB5$longitude, lat=AB5$latitude, popup=AB5$name, weight = 3,radius=2, color= "#ffa500", stroke = F, fillOpacity = 0.5) %>%
+  addCircleMarkers(lng=AB6$longitude, lat=AB6$latitude, popup=AB6$name, weight = 3,radius=2, color= "#1337ed", stroke = F, fillOpacity = 0.5) %>%
+  addCircleMarkers(lng=AB7$longitude, lat=AB7$latitude, popup=AB7$name, weight = 3,radius=2, color= "#cf2323", stroke = F, fillOpacity = 0.5) %>%
+   addLegend("bottomright", colors= c("#ffa500", "#1337ed","#cf2323"), labels=c("Private room", "Entire home & apartment", "Shared room"), title="Room type") 
+
+m
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Chapter 3: Descriptive Statistics
+
+``` {r , echo=FALSE}
+df<-read.csv("AB_NYC_2019.csv", header=TRUE)
+```
+
+``` {r , echo=FALSE}
+str(df)
+names(df)
+````
+
+``` {r , echo=FALSE}
+summary(df)
+
+```
+
+
+``` {r histogram, echo=FALSE}
+hist(df$price, main="Histogram of price/night")
+hist(df$number_of_reviews, main = "Histogram of number of reviews")
+hist(df$availability_365, main="Histogram of available days in a calendar year")
+````
+
+``` {r qqnorm, echo=FALSE}
+qqnorm(df$price, main = "price Q-Q plot", ylab="price quantiles")
+qqline(df$price)
+
+qqnorm(df$number_of_reviews,main = "Number of reviews Q-Q plot", ylab="number of reviews quantiles")
+qqline(df$number_of_reviews)
+
+qqnorm(df$availability_365, main = "availability 365 Q-Q plot", ylab="availability 365 quantiles")
+qqline(df$availability_365)
+````
+
+
+``` {r plotsA, echo=FALSE}
+plot(df$price, df$availability_365, main="Price and avalability", ylab="price", xlab="avalability", col=c("#ff0000","#00ff00","#0000ff","#ffff00") )
+
+plot(df$price, df$number_of_reviews, main="Price and number of reviews", ylab="price", xlab="number of reviews", col=c("#ff0000","#00ff00","#0000ff","#ffff00") )
+````
+
+``` {r plotsB, echo=FALSE}
+df.omitted<-na.omit(df)
+
+#df_num <- select(df.omitted, price, minimum_nights, number_of_reviews, reviews_per_month, calculated_host_listings_count, availability_365)
+
+#loadPkg("corrplot")
+
+#dfcor = cor(df_num) # get the correlation matrix between all numerical variables.
+#dfcor
+
+#corrplot(dfcor)
+#corrplot(dfcor, method = "square") # try "circle", "square", "ellipse", "number", "shade", "color", "pie"
+#corrplot(dfcor, method = "number")
+#corrplot(dfcor, method = "number", type="upper")
+#corrplot.mixed(dfcor)
+
+```
+
+
+
+
+
+
+## Chapter 4: Linear Regression
+```{r setup1, include=FALSE}
+#knitr::opts_chunk$set(echo = TRUE)
+#setwd('/users/russell/desktop/economics/dats 6101/project1')
+#getwd()
+```
+
+```{r data, include=F}
+nyc <- read.csv("AB_NYC_2019.csv", header = TRUE) #load data
+```
+
+```{r outlierKD_def, include=FALSE}
+# modified to allow prompt-free run-through
+outlierKD <- function(dt, var, rmv=NULL) { 
+     var_name <- eval(substitute(var),eval(dt))
+     na1 <- sum(is.na(var_name))
+     m1 <- mean(var_name, na.rm = T)
+     sd1 <- sd(var_name,na.rm = T)
+     par(mfrow=c(2, 2), oma=c(0,0,3,0))
+     boxplot(var_name, main="With outliers")
+     hist(var_name, main="With outliers", xlab=NA, ylab=NA)
+     outlier <- boxplot.stats(var_name)$out
+     mo <- mean(outlier)
+     var_name <- ifelse(var_name %in% outlier, NA, var_name)
+     boxplot(var_name, main="Without outliers")
+     hist(var_name, main="Without outliers", xlab=NA, ylab=NA)
+     title("Outlier Check", outer=TRUE)
+     na2 <- sum(is.na(var_name))
+     cat("Outliers identified:", na2 - na1, "n")
+     cat("Propotion (%) of outliers:", round((na2 - na1) / sum(!is.na(var_name))*100, 1), "n")
+     cat("Mean of the outliers:", round(mo, 2), "n")
+     m2 <- mean(var_name, na.rm = T)
+     cat("Mean without removing outliers:", round(m1, 2), "n")
+     cat("Mean if we remove outliers:", round(m2, 2), "n")
+     #
+     if(is.null(rmv)) { 
+       response <- readline(prompt="Do you want to remove outliers and to replace with NA? [yes/no]: ") 
+     } else {
+       if (rmv=='y'|rmv=='yes'|rmv=='Y'|rmv=='Yes'|rmv=='YES'|rmv==TRUE ) { response = 'y' } else { response = 'n' }
+     }
+     #
+     if(response == "y" | response == "yes"){
+          dt[as.character(substitute(var))] <- invisible(var_name)
+          assign(as.character(as.list(match.call())$dt), dt, envir = .GlobalEnv)
+          cat("Outliers successfully removed", "n")
+          return(invisible(dt))
+     } else{
+          cat("Nothing changed", "n")
+          return(invisible(var_name))
+     }
+}
+```
+
+ 
+```{r outliet, include=F}
+
+outlierKD(nyc, price,'y')
+summary(nyc$price)
+
+outlierKD(nyc, minimum_nights,'y')
+summary(nyc$minimum_nights)
+
+```
+
+```{r na, echo=F}
+nyc4 <- na.omit(nyc)
+summary(nyc4)
+```
+### 4.1 Linear Regression
+#### Smart Question: How do minimum night, number of reviews, reviews per month, calculated host listings count and availability predict price?
+```{r regress, echo=F}
+barcolors = c("green", "violet", "orange", "blue", "pink", "red", "yellow", "cyan")
+loadPkg("car")
+model.final <- lm(price~minimum_nights+number_of_reviews+reviews_per_month+calculated_host_listings_count+availability_365,data=nyc4)
+summary(model.final)
+vif(model.final)
+model.res <- resid(model.final)
+hist(model.res, main="Histogram of Residuals", xlab="Regression Residuals", ylab="Frequency", col=barcolors)
+
+```
+
+All variables except number_of_reviews are statistically significant at the one percent level. The intercept suggests that 107 dollars is the mean price of an Air B&B.  The coefficent on minimum_nights suggests that a one unit increase in the minimum number of nights increases the price by 3.58 dollars.  The coefficient on reviews_per_month suggests that a one unit increase in reviews per month decreases price by 1.09 dollars. The coefficient on calculated_host_listings_count suggests that a one unit increase in the count of calculated host listings increases price by .31 cents. The coefficient on availability_365 suggests that a one unit increase in availability throughout the year increases price by .01 cents. The VIF test suggests that multicollinearity is not a concern in this linear model.
+
+
+
+
+
+
+
+
+## Chapter 5: Neighborhood Groups, Room Types and Price
+### 5.1 SMART Questions
+Are the Airbnb prices the same across New York city neighbourhood groups and among different room types? 
+
+### 5.2 Are prices the same across NYC Neighbourhood Groups?
+H0: The prices are the same across NYC Neighbourhood Groups.
+H1: There are significant differences in prices across NYC Neighbourhood Groups.
+We use ANOVA to test this hypothesis. Below are the summary of the results.
+
+
+
+```{r, include=FALSE}
+
+data <- read.csv("AB_NYC_2019.csv")
+str(data)
+d <- data[c(5, 9, 10)]
+d
+str(d)
+```
+
+```{r}
+outlierKD <- function(dt, var, rmv=NULL) { 
+     var_name <- eval(substitute(var),eval(dt))
+     na1 <- sum(is.na(var_name))
+     m1 <- mean(var_name, na.rm = T)
+     sd1 <- sd(var_name,na.rm = T)
+     par(mfrow=c(2, 2), oma=c(0,0,3,0))
+     boxplot(var_name, main="With outliers")
+     hist(var_name, main="With outliers", xlab=NA, ylab=NA)
+     outlier <- boxplot.stats(var_name)$out
+     mo <- mean(outlier)
+     var_name <- ifelse(var_name %in% outlier, NA, var_name)
+     boxplot(var_name, main="Without outliers")
+     hist(var_name, main="Without outliers", xlab=NA, ylab=NA)
+     title("Outlier Check", outer=TRUE)
+     na2 <- sum(is.na(var_name))
+     cat("Outliers identified:", na2 - na1, "n")
+     cat("Propotion (%) of outliers:", round((na2 - na1) / sum(!is.na(var_name))*100, 1), "n")
+     cat("Mean of the outliers:", round(mo, 2), "n")
+     m2 <- mean(var_name, na.rm = T)
+     cat("Mean without removing outliers:", round(m1, 2), "n")
+     cat("Mean if we remove outliers:", round(m2, 2), "n")
+     #
+     if(is.null(rmv)) { 
+       response <- readline(prompt="Do you want to remove outliers and to replace with NA? [yes/no]: ") 
+     } else {
+       if (rmv=='y'|rmv=='yes'|rmv=='Y'|rmv=='Yes'|rmv=='YES'|rmv==TRUE ) { response = 'y' } else { response = 'n' }
+     }
+     #
+     if(response == "y" | response == "yes"){
+          dt[as.character(substitute(var))] <- invisible(var_name)
+          assign(as.character(as.list(match.call())$dt), dt, envir = .GlobalEnv)
+          cat("Outliers successfully removed", "n")
+          return(invisible(dt))
+     } else{
+          cat("Nothing changed", "n")
+          return(invisible(var_name))
+     }
+}
+```
+
+```{r}
+outlierKD(d, price,'y')
+```
+
+```{r}
+summary(d)
+d1 <- na.omit(d)
+summary(d1)
+```
+
+
+```{r, echo=FALSE}
+anovad1 <- aov(price ~ neighbourhood_group, data=d1)
+summary(anovad1)
+```
+
+
+```{r, echo=FALSE}
+library("ggpubr")
+ggboxplot(d1, x = "neighbourhood_group", y = "price", 
+          ylab = "Price", xlab = "Neighbourhood Group")
+```
+
+
+```{r, echo=FALSE}
+tukeyd1 <- TukeyHSD(anovad1)
+tukeyd1
+```
+
+5.3 Are prices the same across Airbnd Room Types?
+H0: The prices are the same across Airbnd Room Types.
+H1: There are significant differences in prices across Airbnd Room Types.
+We use ANOVA to test this hypothesis. Below are the summary of the results.
+
+```{r}
+summary(d$room_type)
+```
+
+
+```{r, echo=FALSE}
+anovad2 <- aov(d$price ~ d$room_type, data=d1)
+summary(anovad2)
+```
+
+
+```{r, echo=FALSE}
+plot(price ~ room_type, data=d1)
+```
+
+```{r, echo=FALSE}
+tukeyd2 <- TukeyHSD(anovad2)
+tukeyd2
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Chapter 6: Neighborhood Groups, Room Types and Availability
+
+```{r intro, include=FALSE}
+Airbnbdata <- read.csv("AB_NYC_2019.csv")
+str(Airbnbdata)
+```
+
+```{r outlier, include=FALSE}
+outlierKD(Airbnbdata, price,'y')
+outlierKD(Airbnbdata, price,'y')
+```
+
+### 6.1 Smart Question: What is the least/most available neighborhood group and room type?
+
+### 6.2 Neighborhood Groups and Availability
+#### What is the most available Neighborhood Group?
+```{r boxplot, echo=FALSE}
+barcolors1 = c("green", "violet", "orange", "blue", "pink", "red", "yellow", "cyan")
+boxplot(availability_365~neighbourhood_group, data= Airbnbdata, main = "Neighborhood Groups Availability", col = barcolors1)
+summary(Airbnbdata$neighbourhood_group)
+```
+
+Here, we are trying to anwer the question "What is the least available neighborhood group? and how can we rank their availabilities?". If we rank the Neighborhood groups based on availability, the least available Neighborhood Group is Brooklyn, followed by Manhattan, Queens, Bronx and Staten Island respectively.
+
+
+##### Brooklyn
+```{r data1, echo=FALSE}
+BrooklynData <- subset(Airbnbdata, neighbourhood_group == "Brooklyn" , select = 1:16)
+summary(BrooklynData$availability_365)
+
+```
+
+Lets look at the least availabile neighborhood group, Brooklyn. The median for Brooklyn is 28 days, meaning half of the neighborhoods in Brooklyn's availability is less than 28 days of the 365days. In short, it is available ```r (28/365)*100``` % of the time.
+
+##### Manhattan
+```{r data2, echo=FALSE}
+ManhattanData <- subset(Airbnbdata, neighbourhood_group == "Manhattan" , select = 1:16)
+summary(ManhattanData$availability_365)
+```
+
+Lets look at the second least availabile neighborhood group, Manhattan The median for Manhattan is 36 days, meaning half of the neighborhoods in Manhattan's availability is less than 36 days of the 365days. In short, it is available ```r (36/365)*100``` % of the time.
+
+##### Queens
+```{r data3, echo=FALSE}
+QueensData <- subset(Airbnbdata, neighbourhood_group == "Queens" , select = 1:16)
+summary(QueensData$availability_365)
+```
+
+Lets look at the third least availabile neighborhood group, Queens The median for Queens is 98 days, meaning half of the neighborhoods in Queens's availability is less than 98 days of the 365days. In short, it is available ```r (98/365)*100``` % of the time.
+
+##### Bronx
+```{r data4, echo=FALSE}
+BronxData <- subset(Airbnbdata, neighbourhood_group == "Bronx" , select = 1:16)
+summary(BronxData$availability_365)
+```
+
+Lets look at the fourth least availabile neighborhood group, Bronx The median for Bronx is 148 days, meaning half of the neighborhoods in Bronx's availability is less than 148 days of the 365days. In short, it is available ```r (148/365)*100``` % of the time.
+
+##### Staten Island
+```{r data5, echo=FALSE}
+StatenIslandData <- subset(Airbnbdata, neighbourhood_group == "Staten Island" , select = 1:16)
+summary(StatenIslandData$availability_365)
+```
+
+Lets look at the most availabile neighborhood group, Staten Island The median for Staten Island is 219 days, meaning half of the neighborhoods in Staten Island's availability is less than 219 days of the 365days. In short, it is available ```r (219/365)*100``` % of the time.
+
+
+### 6.2.1 ANOVA and Tukey for Neighborhood Group and Availability
+#### Are the differences between availabilities significant? 
+Based on the information in their availabilities, are the difference significant enough accross the neighborhood groups?
+```{r AN, include=FALSE}
+set.seed(1234)
+dplyr::sample_n(Airbnbdata, 10)
+Airbnbdata$neighbourhood_group <- ordered(Airbnbdata$neighbourhood_group,
+                         levels = c("Bronx", "Brooklyn", "Manhattan", "Queens", "Staten Island"))
+
+library(dplyr)
+group_by(Airbnbdata, neighbourhood_group) %>%
+  summarise(
+    count = n(),
+    mean = mean(availability_365, na.rm = TRUE),
+    sd = sd(availability_365, na.rm = TRUE)
+  )
+```
+
+```{r AN2, echo=FALSE}
+AnnovaNGroupAvail <- aov(availability_365 ~ neighbourhood_group, data = Airbnbdata)
+summary(AnnovaNGroupAvail)
+```
+
+```{r, echo=FALSE}
+tk <- TukeyHSD(AnnovaNGroupAvail)
+tk
+```
+We can see the variation of the means and medians of availabilities of each neighborhood group and we perforemed ANNOVA testing to see if there is a true difference between these values. We found out that the p-value is less than 0.05 and there fore we reject the null hypothesis. This means there is a significant difference between the neighborhood groups in terms of their availability.
+
+We also performend a tukey test, and we can see that the p-values are less than 0.5 which means their variations are significant.
+
+
+
+
+### 6.3 Room Types and Availability
+#### What is the most available type of room?
+```{r RM0, echo=FALSE}
+boxplot(availability_365~room_type, data= Airbnbdata, main = "Room Type Availability", col = barcolors1)
+summary(Airbnbdata$room_type)
+```
+Here, we are trying to anwer the question "What is the least/most available room type? and how can we rank their availabilities?".
+We see the number of data collected for each room type.
+Based on room type, the most available is a shared room. Private rooms and Entire Homes/Apartments are almost equally available. We will also determine if the difference in means is significant.
+
+
+##### Entire Home Availability
+```{r RM2, echo=FALSE}
+EntireHomeData <- subset(Airbnbdata, room_type == "Entire home/apt" , select = 16)
+summary(EntireHomeData)
+```
+
+##### Private Room Availability
+```{r RM1, echo=FALSE}
+PrivateRoomData <- subset(Airbnbdata, room_type == "Private room" , select = 16)
+summary(PrivateRoomData)
+```
+
+##### Shared Home Availability
+```{r RM3, echo=FALSE}
+SharedRoomData <- subset(Airbnbdata, room_type == "Shared room" , select = 16)
+summary(SharedRoomData)
+```
+
+
+### 6.3.1 ANOVA and Tukey for Room Type and Availability
+#### Are the differences between availabilities significant? 
+```{r AA, include=FALSE}
+set.seed(1234)
+dplyr::sample_n(Airbnbdata, 10)
+Airbnbdata$room_type <- ordered(Airbnbdata$room_type,
+                         levels = c("Entire home/apt", "Private room", "Shared room"))
+
+library(dplyr)
+group_by(Airbnbdata, room_type) %>%
+  summarise(
+    count = n(),
+    mean = mean(availability_365, na.rm = TRUE),
+    sd = sd(availability_365, na.rm = TRUE)
+  )
+```
+
+```{r AA2, echo=FALSE}
+AnnovaRTypeAvail <- aov(availability_365 ~ room_type, data = Airbnbdata)
+summary(AnnovaRTypeAvail)
+
+tk2 <- TukeyHSD(AnnovaRTypeAvail)
+tk2
+```
+
+We can see the variation of the means and medians of availabilities of each room type and we perforemed ANNOVA testing to see if there is a true difference between these values. We found out that the p-value is less than 0.05 and there fore we reject the null hypothesis. This means there is a significant difference between the room types in terms of their availability.
+
+We also performend a tukey test, and we can see that the p-value for private room and entire home is more than 0.5. Their variations are insignificant and there is no true difference between their means.
+
